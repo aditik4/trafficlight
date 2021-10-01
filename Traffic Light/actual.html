@@ -1,0 +1,393 @@
+  <!DOCTYPE html>
+  <html>
+  <title>Two way Stop Light as Finite State machine: traffic_light_fsm</title>
+  <!-- Set up lights  -->
+  <style>
+  /* this is in-line CSS until end of style */
+  /*  first set up the light holder for each direction, three lights */
+  #containerLight1 {
+    width: 50px;
+    height: 150px;
+    position: relative;
+    background: black;
+  }
+  #containerLight2 {
+    width: 50px;
+    height: 150px;
+    position: relative;
+    background: black;
+  }
+  #containerLight3 {
+    width: 50px;
+    height: 100px;
+    position: relative;
+    background: black;
+    margin-left: 10px;
+  }
+  #containerLight4 {
+    width: 50px;
+    height: 100px;
+    position: relative;
+    background: black;
+    margin-left: 10px;
+  }
+  /*  next create the lights- two of each color as want them named differently later */
+  #stopLightRed1{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+  #stopLightRed2{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: red;
+  }
+
+  #stopLightOrange1{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+  #stopLightOrange2{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+
+  #stopLightGreen1{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: green;
+  }
+  #stopLightGreen2{
+    border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+  #crossNow1 {
+  border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+   }
+  #crossNow2 {
+  border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+  #leftTurn1 {
+  border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+  #leftTurn2 {
+  border-radius: 25px;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    background-color: black;
+  }
+   
+  /* end of in-line CSS */
+  </style>
+
+  <!-- HTML again -->
+  <body>
+  <!-- create buttons -->
+  <p>
+  <button onclick="myStep()">Step animation</button>
+  </p>
+  <p>
+  <button onclick="CrossPleaseNS()">Cross Please NS</button>
+  </p>
+  <p>
+  <button onclick = "CrossPleaseEW()">Cross Please EW</button>
+  </p>
+  <p>
+    <button onclick = "LeftTurnNS()">Turn Left NS</button>
+  </p>
+  <p>
+  <button onclick = "LeftTurnEW()">Turn Left EW</button>
+  </p>
+  <!-- create lights from style objects -->
+  <h1>North-South traffic</h1>
+  <div style="display: flex;">
+  	<div id ="containerLight1">
+        <div id ="stopLightRed1"></div>
+        <div id ="stopLightOrange1"></div>
+        <div id ="stopLightGreen1"></div>
+    	</div>
+      <div id="containerLight3">
+      	<div id = "crossNow1">
+          <br><center>Cross</center></br></div>
+        	<div id = "leftTurn1"><br><center>Left</center></br></div>
+      </div>
+  </div>
+  <br />
+  <h1>East-West traffic</h1>
+  <br />
+  <div>
+  <div style = "display: flex;">
+  	<div id ="containerLight2">
+        <div id ="stopLightRed2"></div>
+        <div id ="stopLightOrange2"></div>
+        <div id ="stopLightGreen2"></div>
+     </div> 
+     <div id = "containerLight4">
+        <div id = "crossNow2"><br><center>Cross</center></br></div>
+        <div id = "leftTurn2"><br><center>Left</center></br></div>
+      </div>
+  </div>
+  <br>
+  <!-- now Javascript -->
+  <script>
+   //determines wether the respective light is on or not
+  var NSCrossOn = false;
+  var EWCrossOn = false;
+  var NSTurnOn = false;
+  var EWTurnOn = false;
+  //state variable, in global space - note if change initial state, may need to fix lights above
+    var intr = 0;
+    
+  //get handles for each light
+    var RedlightNS = document.getElementById("stopLightRed1");
+    var OrangelightNS = document.getElementById("stopLightOrange1");
+    var GreenlightNS = document.getElementById("stopLightGreen1");
+
+    var RedlightEW = document.getElementById("stopLightRed2");
+    var OrangelightEW = document.getElementById("stopLightOrange2");
+    var GreenlightEW = document.getElementById("stopLightGreen2");
+
+    var nsCross = document.getElementById("crossNow1");
+    var ewCross = document.getElementById("crossNow2");
+    var nsTurn = document.getElementById("leftTurn1");
+    var ewTurn = document.getElementById("leftTurn2");
+
+  // determines if a left turn light is on to ensure nobody gets hit
+  var leftOn = false;
+
+ //changes old light to black, new light to specified color
+function changeLight(elementB, elementN, colorN) {
+    elementN.style.backgroundColor = colorN;
+    elementB.style.backgroundColor= "black";
+  }
+
+// this function changes the light to a specified color
+function enable(element, color)
+{
+  element.style.backgroundColor = color;
+}
+
+// changes light to black (turns it off)
+function disable(element)
+{
+  element.style.backgroundColor = "black";
+}
+
+// turns second cross light off
+function disableCrossEW()
+{
+  disable(ewCross);
+  EWCrossOn = false;
+}
+
+// turns first cross light off
+function disableCrossNS()
+{
+  disable(crossNow1);
+  NSCrossOn = false;
+}
+
+// turns on first cross light 
+// and makes sure the left lights are not on
+function enableCrossNS()
+{
+  if(NSCrossOn && !leftOn)
+  {
+    enable(nsCross, "white");
+  }
+}
+
+// turns on second cross light 
+// and make sure the left lights are not on
+function enableCrossEW()
+{
+  if(EWCrossOn && !leftOn)
+  {
+    enable(ewCross, "white");
+    //EWCrossOn = false;
+  }
+}
+
+//shows a red light for the crossers
+//to know when their crossing time is almost done (EW cross)
+function flashCrossEW()
+{
+  if(EWCrossOn && !leftOn)
+  {
+    enable(ewCross, "pink");
+    //EWCrossOn = false;
+  }
+}
+
+//shows as a red light for the crossers
+//to know when their crossing time is almost done (NS Cross)
+function flashCrossNS()
+{
+  if(NSCrossOn && !leftOn)
+  {
+    enable(nsCross, "pink");
+  }
+}
+
+
+// turns first left turn light on
+function enableLeftNS()
+{
+  if(NSTurnOn && !NSCrossOn && !EWCrossOn)
+  {
+    disableLeftEW();
+    enable(nsTurn, "yellow");
+    NSTurnOn = false; 
+    leftOn = true;
+  }
+  else
+  {
+    disableLeftNS();
+  }
+}
+
+// turns second left turn light on
+function enableLeftEW()
+{
+  if(EWTurnOn && !EWCrossOn && !NSCrossOn)
+  {
+    disableLeftNS();
+    enable(ewTurn, "yellow");
+    EWTurnOn = false;
+    leftOn = true;
+  }
+  else
+  {
+    disableLeftEW();
+  }
+}
+
+// turns first left turn light off
+function disableLeftNS()
+{
+  disable(leftTurn1);
+  leftOn = false;
+}
+
+// turns second left turn light off
+function disableLeftEW()
+{
+  disable(leftTurn2);
+  leftOn = false;
+}
+
+
+//decides which left turn light to put on first 
+//to avoid accidents 
+function leftTurn()
+{
+  if (NSTurnOn) {
+          enableLeftNS(); 
+        } else {
+          enableLeftEW();
+        }
+}
+  // the state machine
+  function myStep() {
+  	switch(intr) {
+      //initial state 0 NS light1 green , EW light2 red
+  	
+	  	case 0: //green, red --> orange, red
+      	changeLight(GreenlightNS,OrangelightNS, "orange");
+        enableCrossNS(); // allow the NS to cross since EW is red
+	  		break;
+	  	case 1:// orange, red --> red, red
+      	changeLight(OrangelightNS,RedlightNS, "red");
+        leftTurn();
+        enableCrossNS();
+        flashCrossNS();
+        enableCrossEW(); // both can cross since all red lights
+	  		break;
+	    case 2: // red, red --> red, green
+        disableLeftEW(); 
+        disableLeftNS();
+       	changeLight(RedlightEW,GreenlightEW, "green");
+        enableCrossEW();
+        disableCrossNS();
+	  		break;
+  	  case 3: // red, green --> red, orange
+    		changeLight(GreenlightEW,OrangelightEW, "orange");
+        enableCrossEW();
+        disableCrossNS();
+	  		break;
+  	  case 4: // red, orange --> red, red
+    		changeLight(OrangelightEW,RedlightEW, "red");
+        leftTurn(); // all red, so left can turn on
+        enableCrossEW(); 
+        enableCrossNS();
+        flashCrossEW();
+	  		break;
+  	  case 5: //red, red, --> green, red
+        disableLeftEW(); // turns the left lights off
+        disableLeftNS();
+  		  changeLight(RedlightNS,GreenlightNS, "green");
+        enableCrossNS();
+        disableCrossEW();
+	  		break;
+            
+  	}
+  	// step the state each time function called, and modulus it to cycle back
+  	     intr++;
+  	    // intr = intr % 4;  //cycle 3 ->0, 1, 2 ,3 ...
+  	     intr = intr % 6;  //cycle 4 ->0, 1, 2, 3, 4,5 ..
+  }
+
+  //if button respective button is pressed, set each of these to true
+  // so each of the methods can be performed
+  function CrossPleaseNS() {
+    NSCrossOn = true;
+  }
+    
+  function CrossPleaseEW() {
+    EWCrossOn = true;
+  }
+
+  function LeftTurnNS(){
+    NSTurnOn = true;
+  }
+
+  function LeftTurnEW(){
+    EWTurnOn = true;
+  }
+
+     
+    
+  // end of Java script
+  </script>
+
+  <!-- back to HTML to close -->
+  </body>
+</html>
